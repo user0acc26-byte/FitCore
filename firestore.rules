@@ -1,0 +1,502 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isBootstrappedAdmin() {
+      return isEmailVerified() && request.auth.token.email == 'user0acc26@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrappedAdmin() || (
+        isEmailVerified() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isMemberRecordOwner(data) {
+      return isSignedIn() && (
+        data.authUid == request.auth.uid ||
+        (isEmailVerified() && data.email == request.auth.token.email)
+      );
+    }
+
+    function isLinkedRecordOwner(data) {
+      return isSignedIn() && (
+        data.memberUid == request.auth.uid ||
+        (isEmailVerified() && data.memberEmail == request.auth.token.email)
+      );
+    }
+
+    function isValidAdminUser(data) {
+      return data.keys().hasAll(['uid', 'email', 'fullName', 'role', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'fullName', 'role', 'createdAt']) &&
+        isValidId(data.uid) &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 200 &&
+        data.fullName is string && data.fullName.size() >= 1 && data.fullName.size() <= 120 &&
+        data.role in ['admin', 'super_admin'] &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidMember(data) {
+      return data.keys().hasAll(['memberCode', 'firstName', 'lastName', 'email', 'age', 'gender', 'phone', 'authUid', 'status', 'mustChangePassword', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['memberCode', 'firstName', 'lastName', 'email', 'age', 'dateOfBirth', 'gender', 'phone', 'authUid', 'status', 'mustChangePassword', 'createdAt', 'updatedAt']) &&
+        data.memberCode is string && data.memberCode.size() >= 3 && data.memberCode.size() <= 32 &&
+        data.firstName is string && data.firstName.size() >= 1 && data.firstName.size() <= 80 &&
+        data.lastName is string && data.lastName.size() >= 1 && data.lastName.size() <= 80 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 200 &&
+        data.age is number && data.age >= 12 && data.age <= 110 &&
+        (!('dateOfBirth' in data) || (data.dateOfBirth is string && data.dateOfBirth.size() <= 20)) &&
+        data.gender in ['Male', 'Other', 'Prefer not to say'] &&
+        data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 30 &&
+        data.authUid is string && data.authUid.size() <= 128 &&
+        data.status in ['active', 'inactive', 'pending'] &&
+        data.mustChangePassword is bool &&
+        data.createdAt is string && data.createdAt.size() <= 64 &&
+        data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    function isValidWebsiteUser(data) {
+      return data.keys().hasAll(['uid', 'fullName', 'email', 'phone', 'age', 'gender', 'status', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'fullName', 'email', 'phone', 'age', 'gender', 'status', 'createdAt', 'updatedAt']) &&
+        isValidId(data.uid) &&
+        data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 120 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 200 &&
+        data.phone is string && data.phone.size() <= 30 &&
+        data.age is number && data.age >= 12 && data.age <= 110 &&
+        data.gender in ['Male', 'Other', 'Prefer not to say'] &&
+        data.status == 'active' &&
+        data.createdAt is string && data.createdAt.size() <= 64 &&
+        data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    function isValidMembershipPlan(data) {
+      return data.keys().hasAll(['name', 'durationLabel', 'durationDays', 'price', 'currency', 'description', 'benefits', 'includedFacilities', 'trainingBenefits', 'status', 'isPopular', 'sortOrder']) &&
+        data.keys().hasOnly(['name', 'durationLabel', 'durationDays', 'price', 'currency', 'description', 'benefits', 'includedFacilities', 'trainingBenefits', 'status', 'isPopular', 'sortOrder']) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 100 &&
+        data.durationLabel is string && data.durationLabel.size() >= 2 && data.durationLabel.size() <= 60 &&
+        data.durationDays is number && data.durationDays >= 1 && data.durationDays <= 3650 &&
+        data.price is number && data.price >= 0 &&
+        data.currency is string && data.currency.size() >= 1 && data.currency.size() <= 10 &&
+        data.description is string && data.description.size() <= 500 &&
+        data.benefits is list && data.benefits.size() <= 20 && (data.benefits.size() == 0 || data.benefits[0] is string) &&
+        data.includedFacilities is list && data.includedFacilities.size() <= 20 && (data.includedFacilities.size() == 0 || data.includedFacilities[0] is string) &&
+        data.trainingBenefits is list && data.trainingBenefits.size() <= 20 && (data.trainingBenefits.size() == 0 || data.trainingBenefits[0] is string) &&
+        data.status in ['active', 'inactive'] &&
+        data.isPopular is bool &&
+        data.sortOrder is number;
+    }
+
+    function isValidSubscription(data) {
+      return data.keys().hasAll(['memberId', 'memberUid', 'memberEmail', 'memberName', 'planId', 'planName', 'startDate', 'expiryDate', 'status', 'trainerId', 'trainerName', 'trainerSpecialization', 'trainerPhone', 'amount', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['memberId', 'memberUid', 'memberEmail', 'memberName', 'planId', 'planName', 'startDate', 'expiryDate', 'status', 'trainerId', 'trainerName', 'trainerSpecialization', 'trainerPhone', 'amount', 'createdAt', 'updatedAt']) &&
+        isValidId(data.memberId) &&
+        data.memberUid is string && data.memberUid.size() <= 128 &&
+        data.memberEmail is string && data.memberEmail.size() >= 3 && data.memberEmail.size() <= 200 &&
+        data.memberName is string && data.memberName.size() <= 160 &&
+        isValidId(data.planId) &&
+        data.planName is string && data.planName.size() >= 1 && data.planName.size() <= 100 &&
+        data.startDate is string && data.startDate.size() <= 20 &&
+        data.expiryDate is string && data.expiryDate.size() <= 20 &&
+        data.status in ['active', 'expired', 'cancelled', 'pending'] &&
+        data.trainerId is string && data.trainerId.size() <= 128 &&
+        data.trainerName is string && data.trainerName.size() <= 120 &&
+        data.trainerSpecialization is string && data.trainerSpecialization.size() <= 120 &&
+        data.trainerPhone is string && data.trainerPhone.size() <= 30 &&
+        data.amount is number && data.amount >= 0 &&
+        data.createdAt is string && data.createdAt.size() <= 64 &&
+        data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    function isValidTrainer(data) {
+      return data.keys().hasAll(['fullName', 'imageUrl', 'qualifications', 'experience', 'specialization', 'bio', 'phone', 'status']) &&
+        data.keys().hasOnly(['fullName', 'imageUrl', 'qualifications', 'experience', 'specialization', 'bio', 'phone', 'status']) &&
+        data.fullName is string && data.fullName.size() >= 2 && data.fullName.size() <= 120 &&
+        data.imageUrl is string && data.imageUrl.size() <= 600 &&
+        data.qualifications is string && data.qualifications.size() <= 300 &&
+        data.experience is string && data.experience.size() <= 100 &&
+        data.specialization is string && data.specialization.size() <= 160 &&
+        data.bio is string && data.bio.size() <= 800 &&
+        data.phone is string && data.phone.size() <= 30 &&
+        data.status in ['active', 'inactive'];
+    }
+
+    function isValidSchedule(data) {
+      return data.keys().hasAll(['memberId', 'memberUid', 'memberEmail', 'memberName', 'subscriptionId', 'trainerId', 'trainerName', 'trainingDays', 'timings', 'trainingType', 'instructions', 'updatedAt']) &&
+        data.keys().hasOnly(['memberId', 'memberUid', 'memberEmail', 'memberName', 'subscriptionId', 'trainerId', 'trainerName', 'trainingDays', 'timings', 'trainingType', 'instructions', 'updatedAt']) &&
+        isValidId(data.memberId) &&
+        data.memberUid is string && data.memberUid.size() <= 128 &&
+        data.memberEmail is string && data.memberEmail.size() >= 3 && data.memberEmail.size() <= 200 &&
+        data.memberName is string && data.memberName.size() <= 160 &&
+        data.subscriptionId is string && data.subscriptionId.size() <= 128 &&
+        data.trainerId is string && data.trainerId.size() <= 128 &&
+        data.trainerName is string && data.trainerName.size() <= 120 &&
+        data.trainingDays is string && data.trainingDays.size() >= 2 && data.trainingDays.size() <= 120 &&
+        data.timings is string && data.timings.size() >= 2 && data.timings.size() <= 120 &&
+        data.trainingType is string && data.trainingType.size() >= 2 && data.trainingType.size() <= 120 &&
+        data.instructions is string && data.instructions.size() <= 1000 &&
+        data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    function isValidAttendance(data) {
+      return data.keys().hasAll(['memberId', 'memberUid', 'memberEmail', 'memberName', 'subscriptionId', 'date', 'status', 'notes', 'createdAt']) &&
+        data.keys().hasOnly(['memberId', 'memberUid', 'memberEmail', 'memberName', 'subscriptionId', 'date', 'status', 'notes', 'createdAt']) &&
+        isValidId(data.memberId) &&
+        data.memberUid is string && data.memberUid.size() <= 128 &&
+        data.memberEmail is string && data.memberEmail.size() >= 3 && data.memberEmail.size() <= 200 &&
+        data.memberName is string && data.memberName.size() <= 160 &&
+        data.subscriptionId is string && data.subscriptionId.size() <= 128 &&
+        data.date is string && data.date.size() <= 20 &&
+        data.status in ['present', 'absent'] &&
+        data.notes is string && data.notes.size() <= 300 &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidPayment(data) {
+      return data.keys().hasAll(['memberId', 'memberUid', 'memberEmail', 'memberName', 'subscriptionId', 'planName', 'amount', 'status', 'paymentDate', 'method', 'notes', 'createdAt']) &&
+        data.keys().hasOnly(['memberId', 'memberUid', 'memberEmail', 'memberName', 'subscriptionId', 'planName', 'amount', 'status', 'paymentDate', 'method', 'notes', 'createdAt']) &&
+        isValidId(data.memberId) &&
+        data.memberUid is string && data.memberUid.size() <= 128 &&
+        data.memberEmail is string && data.memberEmail.size() >= 3 && data.memberEmail.size() <= 200 &&
+        data.memberName is string && data.memberName.size() <= 160 &&
+        data.subscriptionId is string && data.subscriptionId.size() <= 128 &&
+        data.planName is string && data.planName.size() <= 100 &&
+        data.amount is number && data.amount >= 0 &&
+        data.status in ['paid', 'unpaid'] &&
+        data.paymentDate is string && data.paymentDate.size() <= 20 &&
+        data.method is string && data.method.size() <= 60 &&
+        data.notes is string && data.notes.size() <= 300 &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidProgress(data) {
+      return data.keys().hasAll(['memberId', 'memberUid', 'memberEmail', 'memberName', 'measurementDate', 'fullBody', 'chest', 'biceps', 'waist', 'thighs', 'shoulders', 'weight', 'bodyFat', 'notes', 'recordedBy', 'createdAt']) &&
+        data.keys().hasOnly(['memberId', 'memberUid', 'memberEmail', 'memberName', 'measurementDate', 'fullBody', 'chest', 'biceps', 'waist', 'thighs', 'shoulders', 'weight', 'bodyFat', 'notes', 'recordedBy', 'createdAt']) &&
+        isValidId(data.memberId) &&
+        data.memberUid is string && data.memberUid.size() <= 128 &&
+        data.memberEmail is string && data.memberEmail.size() >= 3 && data.memberEmail.size() <= 200 &&
+        data.memberName is string && data.memberName.size() <= 160 &&
+        data.measurementDate is string && data.measurementDate.size() <= 20 &&
+        data.fullBody is number &&
+        data.chest is number &&
+        data.biceps is number &&
+        data.waist is number &&
+        data.thighs is number &&
+        data.shoulders is number &&
+        data.weight is number &&
+        data.bodyFat is number &&
+        data.notes is string && data.notes.size() <= 500 &&
+        data.recordedBy is string && data.recordedBy.size() <= 120 &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidWorkoutPlan(data) {
+      return data.keys().hasAll(['memberId', 'memberUid', 'memberEmail', 'memberName', 'title', 'trainerName', 'trainerNotes', 'exercises', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['memberId', 'memberUid', 'memberEmail', 'memberName', 'title', 'trainerName', 'trainerNotes', 'exercises', 'createdAt', 'updatedAt']) &&
+        isValidId(data.memberId) &&
+        data.memberUid is string && data.memberUid.size() <= 128 &&
+        data.memberEmail is string && data.memberEmail.size() >= 3 && data.memberEmail.size() <= 200 &&
+        data.memberName is string && data.memberName.size() <= 160 &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 140 &&
+        data.trainerName is string && data.trainerName.size() <= 120 &&
+        data.trainerNotes is string && data.trainerNotes.size() <= 1000 &&
+        data.exercises is list && data.exercises.size() <= 40 && (data.exercises.size() == 0 || data.exercises[0] is map) &&
+        data.createdAt is string && data.createdAt.size() <= 64 &&
+        data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    function isValidNotification(data) {
+      return data.keys().hasAll(['memberId', 'memberUid', 'memberEmail', 'type', 'title', 'message', 'isRead', 'createdAt']) &&
+        data.keys().hasOnly(['memberId', 'memberUid', 'memberEmail', 'type', 'title', 'message', 'isRead', 'createdAt']) &&
+        data.memberId is string && data.memberId.size() >= 1 && data.memberId.size() <= 128 &&
+        data.memberUid is string && data.memberUid.size() <= 128 &&
+        data.memberEmail is string && data.memberEmail.size() <= 200 &&
+        data.type in ['expiry_reminder', 'payment_due', 'schedule_update', 'trainer_update', 'announcement'] &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 140 &&
+        data.message is string && data.message.size() >= 2 && data.message.size() <= 1000 &&
+        data.isRead is bool &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidFacility(data) {
+      return data.keys().hasAll(['name', 'category', 'description', 'benefits', 'imageUrl', 'sortOrder', 'isActive']) &&
+        data.keys().hasOnly(['name', 'category', 'description', 'benefits', 'imageUrl', 'sortOrder', 'isActive']) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
+        data.category is string && data.category.size() <= 80 &&
+        data.description is string && data.description.size() <= 800 &&
+        data.benefits is list && data.benefits.size() <= 20 && (data.benefits.size() == 0 || data.benefits[0] is string) &&
+        data.imageUrl is string && data.imageUrl.size() <= 600 &&
+        data.sortOrder is number &&
+        data.isActive is bool;
+    }
+
+    function isValidClass(data) {
+      return data.keys().hasAll(['name', 'description', 'duration', 'difficultyLevel', 'schedule', 'imageUrl', 'isActive']) &&
+        data.keys().hasOnly(['name', 'description', 'duration', 'difficultyLevel', 'schedule', 'imageUrl', 'isActive']) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
+        data.description is string && data.description.size() <= 800 &&
+        data.duration is string && data.duration.size() <= 60 &&
+        data.difficultyLevel in ['Beginner', 'Intermediate', 'Advanced', 'All Levels'] &&
+        data.schedule is string && data.schedule.size() <= 160 &&
+        data.imageUrl is string && data.imageUrl.size() <= 600 &&
+        data.isActive is bool;
+    }
+
+    function isValidShopCategory(data) {
+      return data.keys().hasAll(['name', 'slug', 'sortOrder']) &&
+        data.keys().hasOnly(['name', 'slug', 'sortOrder']) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 80 &&
+        data.slug is string && data.slug.size() >= 2 && data.slug.size() <= 80 &&
+        data.sortOrder is number;
+    }
+
+    function isValidShopProduct(data) {
+      return data.keys().hasAll(['name', 'brand', 'description', 'price', 'category', 'stock', 'imageUrl', 'isFeatured', 'isAvailable']) &&
+        data.keys().hasOnly(['name', 'brand', 'description', 'price', 'category', 'stock', 'imageUrl', 'isFeatured', 'isAvailable']) &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 140 &&
+        data.brand is string && data.brand.size() <= 80 &&
+        data.description is string && data.description.size() <= 800 &&
+        data.price is number && data.price >= 0 &&
+        data.category is string && data.category.size() <= 80 &&
+        data.stock is number && data.stock >= 0 &&
+        data.imageUrl is string && data.imageUrl.size() <= 600 &&
+        data.isFeatured is bool &&
+        data.isAvailable is bool;
+    }
+
+    function isValidSiteContent(data) {
+      return data.keys().hasAll(['sectionKey', 'data', 'updatedAt']) &&
+        data.keys().hasOnly(['sectionKey', 'data', 'updatedAt']) &&
+        data.sectionKey is string && data.sectionKey.size() <= 60 &&
+        data.data is map &&
+        data.updatedAt is string && data.updatedAt.size() <= 64;
+    }
+
+    function isValidAnnouncement(data) {
+      return data.keys().hasAll(['title', 'message', 'audience', 'isActive', 'createdAt']) &&
+        data.keys().hasOnly(['title', 'message', 'audience', 'isActive', 'createdAt']) &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 140 &&
+        data.message is string && data.message.size() >= 2 && data.message.size() <= 1000 &&
+        data.audience in ['public', 'members'] &&
+        data.isActive is bool &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    function isValidInquiry(data) {
+      return data.keys().hasAll(['type', 'name', 'email', 'phone', 'message', 'requestedPlanId', 'requestedPlanName', 'age', 'gender', 'status', 'createdAt']) &&
+        data.keys().hasOnly(['type', 'name', 'email', 'phone', 'message', 'requestedPlanId', 'requestedPlanName', 'age', 'gender', 'status', 'createdAt']) &&
+        data.type in ['contact', 'membership_registration'] &&
+        data.name is string && data.name.size() >= 2 && data.name.size() <= 120 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 200 &&
+        data.phone is string && data.phone.size() >= 5 && data.phone.size() <= 30 &&
+        data.message is string && data.message.size() <= 1500 &&
+        data.requestedPlanId is string && data.requestedPlanId.size() <= 128 &&
+        data.requestedPlanName is string && data.requestedPlanName.size() <= 100 &&
+        data.age is number && data.age >= 0 && data.age <= 110 &&
+        data.gender is string && data.gender.size() <= 30 &&
+        data.status in ['new', 'contacted', 'approved', 'archived'] &&
+        data.createdAt is string && data.createdAt.size() <= 64;
+    }
+
+    match /test/connection {
+      allow get: if true;
+    }
+
+    match /admins/{uid} {
+      allow get: if isValidId(uid) && (isAdmin() || (isSignedIn() && request.auth.uid == uid));
+      allow list: if isAdmin();
+      allow create: if isValidId(uid) && isValidAdminUser(incoming()) && (isAdmin() || (isBootstrappedAdmin() && request.auth.uid == uid));
+      allow update: if isValidId(uid) && isValidAdminUser(incoming()) && isAdmin();
+      allow delete: if isValidId(uid) && isAdmin() && uid != request.auth.uid;
+    }
+
+    match /users/{uid} {
+      allow get: if isValidId(uid) && ((isSignedIn() && request.auth.uid == uid) || isAdmin());
+      allow list: if isAdmin();
+      allow create: if isValidId(uid) && isSignedIn() && request.auth.uid == uid && isValidWebsiteUser(incoming()) && incoming().uid == request.auth.uid;
+      allow update: if isValidId(uid) && isValidWebsiteUser(incoming()) && (
+        isAdmin() ||
+        (
+          isSignedIn() &&
+          request.auth.uid == uid &&
+          incoming().uid == existing().uid &&
+          incoming().createdAt == existing().createdAt
+        )
+      );
+      allow delete: if isValidId(uid) && (isAdmin() || (isSignedIn() && request.auth.uid == uid));
+    }
+
+    match /members/{memberId} {
+      allow get: if isValidId(memberId) && (isMemberRecordOwner(existing()) || isAdmin());
+      allow list: if isMemberRecordOwner(resource.data) || isAdmin();
+      allow create: if isValidId(memberId) && isValidMember(incoming()) && isAdmin();
+      allow update: if isValidId(memberId) && isValidMember(incoming()) && (
+        isAdmin() ||
+        (
+          isMemberRecordOwner(existing()) &&
+          (existing().authUid == '' || existing().authUid == request.auth.uid) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['authUid', 'mustChangePassword', 'updatedAt']) &&
+          incoming().authUid == request.auth.uid &&
+          incoming().createdAt == existing().createdAt
+        )
+      );
+      allow delete: if isValidId(memberId) && isAdmin();
+    }
+
+    match /membershipPlans/{planId} {
+      allow get: if isValidId(planId);
+      allow list: if true;
+      allow create: if isValidId(planId) && isValidMembershipPlan(incoming()) && isAdmin();
+      allow update: if isValidId(planId) && isValidMembershipPlan(incoming()) && isAdmin();
+      allow delete: if isValidId(planId) && isAdmin();
+    }
+
+    match /subscriptions/{subscriptionId} {
+      allow get: if isValidId(subscriptionId) && (isLinkedRecordOwner(existing()) || isAdmin());
+      allow list: if isLinkedRecordOwner(resource.data) || isAdmin();
+      allow create: if isValidId(subscriptionId) && isValidSubscription(incoming()) && isAdmin();
+      allow update: if isValidId(subscriptionId) && isValidSubscription(incoming()) && isAdmin();
+      allow delete: if isValidId(subscriptionId) && isAdmin();
+    }
+
+    match /trainers/{trainerId} {
+      allow get: if isValidId(trainerId);
+      allow list: if true;
+      allow create: if isValidId(trainerId) && isValidTrainer(incoming()) && isAdmin();
+      allow update: if isValidId(trainerId) && isValidTrainer(incoming()) && isAdmin();
+      allow delete: if isValidId(trainerId) && isAdmin();
+    }
+
+    match /trainingSchedules/{scheduleId} {
+      allow get: if isValidId(scheduleId) && (isLinkedRecordOwner(existing()) || isAdmin());
+      allow list: if isLinkedRecordOwner(resource.data) || isAdmin();
+      allow create: if isValidId(scheduleId) && isValidSchedule(incoming()) && isAdmin();
+      allow update: if isValidId(scheduleId) && isValidSchedule(incoming()) && isAdmin();
+      allow delete: if isValidId(scheduleId) && isAdmin();
+    }
+
+    match /attendance/{attendanceId} {
+      allow get: if isValidId(attendanceId) && (isLinkedRecordOwner(existing()) || isAdmin());
+      allow list: if isLinkedRecordOwner(resource.data) || isAdmin();
+      allow create: if isValidId(attendanceId) && isValidAttendance(incoming()) && isAdmin();
+      allow update: if isValidId(attendanceId) && isValidAttendance(incoming()) && isAdmin();
+      allow delete: if isValidId(attendanceId) && isAdmin();
+    }
+
+    match /payments/{paymentId} {
+      allow get: if isValidId(paymentId) && (isLinkedRecordOwner(existing()) || isAdmin());
+      allow list: if isLinkedRecordOwner(resource.data) || isAdmin();
+      allow create: if isValidId(paymentId) && isValidPayment(incoming()) && isAdmin();
+      allow update: if isValidId(paymentId) && isValidPayment(incoming()) && isAdmin();
+      allow delete: if isValidId(paymentId) && isAdmin();
+    }
+
+    match /progressRecords/{progressId} {
+      allow get: if isValidId(progressId) && (isLinkedRecordOwner(existing()) || isAdmin());
+      allow list: if isLinkedRecordOwner(resource.data) || isAdmin();
+      allow create: if isValidId(progressId) && isValidProgress(incoming()) && isAdmin();
+      allow update: if isValidId(progressId) && isValidProgress(incoming()) && isAdmin();
+      allow delete: if isValidId(progressId) && isAdmin();
+    }
+
+    match /workoutPlans/{workoutId} {
+      allow get: if isValidId(workoutId) && (isLinkedRecordOwner(existing()) || isAdmin());
+      allow list: if isLinkedRecordOwner(resource.data) || isAdmin();
+      allow create: if isValidId(workoutId) && isValidWorkoutPlan(incoming()) && isAdmin();
+      allow update: if isValidId(workoutId) && isValidWorkoutPlan(incoming()) && isAdmin();
+      allow delete: if isValidId(workoutId) && isAdmin();
+    }
+
+    match /notifications/{notificationId} {
+      allow get: if isValidId(notificationId) && (isLinkedRecordOwner(existing()) || existing().memberId == 'ALL' || isAdmin());
+      allow list: if isLinkedRecordOwner(resource.data) || resource.data.memberId == 'ALL' || isAdmin();
+      allow create: if isValidId(notificationId) && isValidNotification(incoming()) && isAdmin();
+      allow update: if isValidId(notificationId) && isValidNotification(incoming()) && (
+        isAdmin() ||
+        (
+          isLinkedRecordOwner(existing()) &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['isRead'])
+        )
+      );
+      allow delete: if isValidId(notificationId) && isAdmin();
+    }
+
+    match /facilities/{facilityId} {
+      allow get: if isValidId(facilityId);
+      allow list: if true;
+      allow create: if isValidId(facilityId) && isValidFacility(incoming()) && isAdmin();
+      allow update: if isValidId(facilityId) && isValidFacility(incoming()) && isAdmin();
+      allow delete: if isValidId(facilityId) && isAdmin();
+    }
+
+    match /classes/{classId} {
+      allow get: if isValidId(classId);
+      allow list: if true;
+      allow create: if isValidId(classId) && isValidClass(incoming()) && isAdmin();
+      allow update: if isValidId(classId) && isValidClass(incoming()) && isAdmin();
+      allow delete: if isValidId(classId) && isAdmin();
+    }
+
+    match /shopCategories/{categoryId} {
+      allow get: if isValidId(categoryId);
+      allow list: if true;
+      allow create: if isValidId(categoryId) && isValidShopCategory(incoming()) && isAdmin();
+      allow update: if isValidId(categoryId) && isValidShopCategory(incoming()) && isAdmin();
+      allow delete: if isValidId(categoryId) && isAdmin();
+    }
+
+    match /shopProducts/{productId} {
+      allow get: if isValidId(productId);
+      allow list: if true;
+      allow create: if isValidId(productId) && isValidShopProduct(incoming()) && isAdmin();
+      allow update: if isValidId(productId) && isValidShopProduct(incoming()) && isAdmin();
+      allow delete: if isValidId(productId) && isAdmin();
+    }
+
+    match /siteContent/{docId} {
+      allow get: if isValidId(docId);
+      allow list: if true;
+      allow create: if isValidId(docId) && isValidSiteContent(incoming()) && isAdmin();
+      allow update: if isValidId(docId) && isValidSiteContent(incoming()) && isAdmin();
+      allow delete: if isValidId(docId) && isAdmin();
+    }
+
+    match /announcements/{announcementId} {
+      allow get: if isValidId(announcementId);
+      allow list: if true;
+      allow create: if isValidId(announcementId) && isValidAnnouncement(incoming()) && isAdmin();
+      allow update: if isValidId(announcementId) && isValidAnnouncement(incoming()) && isAdmin();
+      allow delete: if isValidId(announcementId) && isAdmin();
+    }
+
+    match /inquiries/{inquiryId} {
+      allow get: if isValidId(inquiryId) && isAdmin();
+      allow list: if isAdmin();
+      allow create: if isValidId(inquiryId) && isValidInquiry(incoming()) && incoming().status == 'new';
+      allow update: if isValidId(inquiryId) && isValidInquiry(incoming()) && isAdmin();
+      allow delete: if isValidId(inquiryId) && isAdmin();
+    }
+  }
+}

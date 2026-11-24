@@ -1,0 +1,409 @@
+{
+  "entities": {
+    "AdminUser": {
+      "title": "AdminUser",
+      "description": "Authorized FitCore administrator role record.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "email": { "type": "string", "format": "email", "maxLength": 200 },
+        "fullName": { "type": "string", "minLength": 1, "maxLength": 120 },
+        "role": { "type": "string", "enum": ["admin", "super_admin"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "fullName", "role", "createdAt"]
+    },
+    "Member": {
+      "title": "Member",
+      "description": "Official gym member profile managed by FitCore administrators.",
+      "type": "object",
+      "properties": {
+        "memberCode": { "type": "string", "minLength": 3, "maxLength": 32 },
+        "firstName": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "lastName": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "email": { "type": "string", "format": "email", "maxLength": 200 },
+        "age": { "type": "number" },
+        "dateOfBirth": { "type": "string", "maxLength": 20 },
+        "gender": { "type": "string", "enum": ["Male", "Other", "Prefer not to say"] },
+        "phone": { "type": "string", "minLength": 5, "maxLength": 30 },
+        "authUid": { "type": "string", "maxLength": 128 },
+        "status": { "type": "string", "enum": ["active", "inactive", "pending"] },
+        "mustChangePassword": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["memberCode", "firstName", "lastName", "email", "age", "gender", "phone", "status", "mustChangePassword", "createdAt", "updatedAt"]
+    },
+    "WebsiteUser": {
+      "title": "WebsiteUser",
+      "description": "Self-registered public website user account (separate from Gym Member Portal).",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "fullName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "email": { "type": "string", "format": "email", "maxLength": 200 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "age": { "type": "number" },
+        "gender": { "type": "string", "enum": ["Male", "Other", "Prefer not to say"] },
+        "status": { "type": "string", "enum": ["active"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "fullName", "email", "phone", "age", "gender", "status", "createdAt", "updatedAt"]
+    },
+    "MembershipPlan": {
+      "title": "MembershipPlan",
+      "description": "Publicly visible membership package tier.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 100 },
+        "durationLabel": { "type": "string", "minLength": 2, "maxLength": 60 },
+        "durationDays": { "type": "number" },
+        "price": { "type": "number" },
+        "currency": { "type": "string", "maxLength": 10 },
+        "description": { "type": "string", "maxLength": 500 },
+        "benefits": { "type": "array" },
+        "includedFacilities": { "type": "array" },
+        "trainingBenefits": { "type": "array" },
+        "status": { "type": "string", "enum": ["active", "inactive"] },
+        "isPopular": { "type": "boolean" },
+        "sortOrder": { "type": "number" }
+      },
+      "required": ["name", "durationLabel", "durationDays", "price", "currency", "benefits", "includedFacilities", "trainingBenefits", "status", "isPopular"]
+    },
+    "MemberSubscription": {
+      "title": "MemberSubscription",
+      "description": "Individual membership subscription assigned to a member.",
+      "type": "object",
+      "properties": {
+        "memberId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "memberUid": { "type": "string", "maxLength": 128 },
+        "memberEmail": { "type": "string", "format": "email", "maxLength": 200 },
+        "memberName": { "type": "string", "maxLength": 160 },
+        "planId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "planName": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "startDate": { "type": "string", "maxLength": 20 },
+        "expiryDate": { "type": "string", "maxLength": 20 },
+        "status": { "type": "string", "enum": ["active", "expired", "cancelled", "pending"] },
+        "trainerId": { "type": "string", "maxLength": 128 },
+        "trainerName": { "type": "string", "maxLength": 120 },
+        "trainerSpecialization": { "type": "string", "maxLength": 120 },
+        "trainerPhone": { "type": "string", "maxLength": 30 },
+        "amount": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["memberId", "memberEmail", "planId", "planName", "startDate", "expiryDate", "status", "amount", "createdAt", "updatedAt"]
+    },
+    "Trainer": {
+      "title": "Trainer",
+      "description": "FitCore strength and conditioning coach profile.",
+      "type": "object",
+      "properties": {
+        "fullName": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "imageUrl": { "type": "string", "maxLength": 600 },
+        "qualifications": { "type": "string", "maxLength": 300 },
+        "experience": { "type": "string", "maxLength": 100 },
+        "specialization": { "type": "string", "maxLength": 160 },
+        "bio": { "type": "string", "maxLength": 800 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "status": { "type": "string", "enum": ["active", "inactive"] }
+      },
+      "required": ["fullName", "qualifications", "experience", "specialization", "status"]
+    },
+    "TrainingSchedule": {
+      "title": "TrainingSchedule",
+      "description": "Member training schedule tied to an assigned trainer.",
+      "type": "object",
+      "properties": {
+        "memberId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "memberUid": { "type": "string", "maxLength": 128 },
+        "memberEmail": { "type": "string", "format": "email", "maxLength": 200 },
+        "memberName": { "type": "string", "maxLength": 160 },
+        "subscriptionId": { "type": "string", "maxLength": 128 },
+        "trainerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "trainerName": { "type": "string", "maxLength": 120 },
+        "trainingDays": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "timings": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "trainingType": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "instructions": { "type": "string", "maxLength": 1000 },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["memberId", "memberEmail", "trainerId", "trainerName", "trainingDays", "timings", "trainingType", "updatedAt"]
+    },
+    "AttendanceRecord": {
+      "title": "AttendanceRecord",
+      "description": "Daily attendance record for a member.",
+      "type": "object",
+      "properties": {
+        "memberId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "memberUid": { "type": "string", "maxLength": 128 },
+        "memberEmail": { "type": "string", "format": "email", "maxLength": 200 },
+        "memberName": { "type": "string", "maxLength": 160 },
+        "subscriptionId": { "type": "string", "maxLength": 128 },
+        "date": { "type": "string", "maxLength": 20 },
+        "status": { "type": "string", "enum": ["present", "absent"] },
+        "notes": { "type": "string", "maxLength": 300 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["memberId", "memberEmail", "date", "status", "createdAt"]
+    },
+    "PaymentRecord": {
+      "title": "PaymentRecord",
+      "description": "Membership fee payment record.",
+      "type": "object",
+      "properties": {
+        "memberId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "memberUid": { "type": "string", "maxLength": 128 },
+        "memberEmail": { "type": "string", "format": "email", "maxLength": 200 },
+        "memberName": { "type": "string", "maxLength": 160 },
+        "subscriptionId": { "type": "string", "maxLength": 128 },
+        "planName": { "type": "string", "maxLength": 100 },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["paid", "unpaid"] },
+        "paymentDate": { "type": "string", "maxLength": 20 },
+        "method": { "type": "string", "maxLength": 60 },
+        "notes": { "type": "string", "maxLength": 300 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["memberId", "memberEmail", "planName", "amount", "status", "paymentDate", "createdAt"]
+    },
+    "ProgressRecord": {
+      "title": "ProgressRecord",
+      "description": "Body measurement progress snapshot for a member.",
+      "type": "object",
+      "properties": {
+        "memberId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "memberUid": { "type": "string", "maxLength": 128 },
+        "memberEmail": { "type": "string", "format": "email", "maxLength": 200 },
+        "memberName": { "type": "string", "maxLength": 160 },
+        "measurementDate": { "type": "string", "maxLength": 20 },
+        "fullBody": { "type": "number" },
+        "chest": { "type": "number" },
+        "biceps": { "type": "number" },
+        "waist": { "type": "number" },
+        "thighs": { "type": "number" },
+        "shoulders": { "type": "number" },
+        "weight": { "type": "number" },
+        "bodyFat": { "type": "number" },
+        "notes": { "type": "string", "maxLength": 500 },
+        "recordedBy": { "type": "string", "maxLength": 120 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["memberId", "memberEmail", "measurementDate", "weight", "bodyFat", "createdAt"]
+    },
+    "WorkoutPlan": {
+      "title": "WorkoutPlan",
+      "description": "Assigned workout plan containing structured exercises.",
+      "type": "object",
+      "properties": {
+        "memberId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "memberUid": { "type": "string", "maxLength": 128 },
+        "memberEmail": { "type": "string", "format": "email", "maxLength": 200 },
+        "memberName": { "type": "string", "maxLength": 160 },
+        "title": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "trainerName": { "type": "string", "maxLength": 120 },
+        "trainerNotes": { "type": "string", "maxLength": 1000 },
+        "exercises": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["memberId", "memberEmail", "title", "exercises", "createdAt", "updatedAt"]
+    },
+    "MemberNotification": {
+      "title": "MemberNotification",
+      "description": "Notification targeted to a specific member or gym-wide.",
+      "type": "object",
+      "properties": {
+        "memberId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "memberUid": { "type": "string", "maxLength": 128 },
+        "memberEmail": { "type": "string", "maxLength": 200 },
+        "type": { "type": "string", "enum": ["expiry_reminder", "payment_due", "schedule_update", "trainer_update", "announcement"] },
+        "title": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "message": { "type": "string", "minLength": 2, "maxLength": 1000 },
+        "isRead": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["memberId", "memberEmail", "type", "title", "message", "isRead", "createdAt"]
+    },
+    "Facility": {
+      "title": "Facility",
+      "description": "Gym facility showcased on public website.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "category": { "type": "string", "maxLength": 80 },
+        "description": { "type": "string", "maxLength": 800 },
+        "benefits": { "type": "array" },
+        "imageUrl": { "type": "string", "maxLength": 600 },
+        "sortOrder": { "type": "number" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["name", "description", "benefits", "isActive"]
+    },
+    "FitnessClass": {
+      "title": "FitnessClass",
+      "description": "Gym class program.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "description": { "type": "string", "maxLength": 800 },
+        "duration": { "type": "string", "maxLength": 60 },
+        "difficultyLevel": { "type": "string", "enum": ["Beginner", "Intermediate", "Advanced", "All Levels"] },
+        "schedule": { "type": "string", "maxLength": 160 },
+        "imageUrl": { "type": "string", "maxLength": 600 },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["name", "description", "duration", "difficultyLevel", "isActive"]
+    },
+    "ShopCategory": {
+      "title": "ShopCategory",
+      "description": "Supplement and fitness accessory category.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "slug": { "type": "string", "minLength": 2, "maxLength": 80 },
+        "sortOrder": { "type": "number" }
+      },
+      "required": ["name", "slug"]
+    },
+    "ShopProduct": {
+      "title": "ShopProduct",
+      "description": "Fitness supplement or accessory product.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "brand": { "type": "string", "maxLength": 80 },
+        "description": { "type": "string", "maxLength": 800 },
+        "price": { "type": "number" },
+        "category": { "type": "string", "maxLength": 80 },
+        "stock": { "type": "number" },
+        "imageUrl": { "type": "string", "maxLength": 600 },
+        "isFeatured": { "type": "boolean" },
+        "isAvailable": { "type": "boolean" }
+      },
+      "required": ["name", "brand", "description", "price", "category", "stock", "isAvailable"]
+    },
+    "SiteContent": {
+      "title": "SiteContent",
+      "description": "Editable public website content blocks (About Us, Branches, Achievements, Contact Info).",
+      "type": "object",
+      "properties": {
+        "sectionKey": { "type": "string", "maxLength": 60 },
+        "data": { "type": "object" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["sectionKey", "data", "updatedAt"]
+    },
+    "WebsiteAnnouncement": {
+      "title": "WebsiteAnnouncement",
+      "description": "Gym-wide announcement published by admin.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "minLength": 2, "maxLength": 140 },
+        "message": { "type": "string", "minLength": 2, "maxLength": 1000 },
+        "audience": { "type": "string", "enum": ["public", "members"] },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "message", "audience", "isActive", "createdAt"]
+    },
+    "Inquiry": {
+      "title": "Inquiry",
+      "description": "Public Contact Us inquiry or membership registration request.",
+      "type": "object",
+      "properties": {
+        "type": { "type": "string", "enum": ["contact", "membership_registration"] },
+        "name": { "type": "string", "minLength": 2, "maxLength": 120 },
+        "email": { "type": "string", "format": "email", "maxLength": 200 },
+        "phone": { "type": "string", "minLength": 5, "maxLength": 30 },
+        "message": { "type": "string", "maxLength": 1500 },
+        "requestedPlanId": { "type": "string", "maxLength": 128 },
+        "requestedPlanName": { "type": "string", "maxLength": 100 },
+        "age": { "type": "number" },
+        "gender": { "type": "string", "maxLength": 30 },
+        "status": { "type": "string", "enum": ["new", "contacted", "approved", "archived"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["type", "name", "email", "phone", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/admins/{uid}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "Admin role directory"
+    },
+    "/users/{uid}": {
+      "schema": { "$ref": "#/entities/WebsiteUser" },
+      "description": "General website user accounts"
+    },
+    "/members/{memberId}": {
+      "schema": { "$ref": "#/entities/Member" },
+      "description": "Registered gym members"
+    },
+    "/membershipPlans/{planId}": {
+      "schema": { "$ref": "#/entities/MembershipPlan" },
+      "description": "Public membership packages"
+    },
+    "/subscriptions/{subscriptionId}": {
+      "schema": { "$ref": "#/entities/MemberSubscription" },
+      "description": "Member subscriptions and trainer links"
+    },
+    "/trainers/{trainerId}": {
+      "schema": { "$ref": "#/entities/Trainer" },
+      "description": "Gym trainers"
+    },
+    "/trainingSchedules/{scheduleId}": {
+      "schema": { "$ref": "#/entities/TrainingSchedule" },
+      "description": "Member training schedules"
+    },
+    "/attendance/{attendanceId}": {
+      "schema": { "$ref": "#/entities/AttendanceRecord" },
+      "description": "Member attendance logs"
+    },
+    "/payments/{paymentId}": {
+      "schema": { "$ref": "#/entities/PaymentRecord" },
+      "description": "Membership fee payments"
+    },
+    "/progressRecords/{progressId}": {
+      "schema": { "$ref": "#/entities/ProgressRecord" },
+      "description": "Member body measurement progress logs"
+    },
+    "/workoutPlans/{workoutId}": {
+      "schema": { "$ref": "#/entities/WorkoutPlan" },
+      "description": "Member workout plans"
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/MemberNotification" },
+      "description": "Member notifications"
+    },
+    "/facilities/{facilityId}": {
+      "schema": { "$ref": "#/entities/Facility" },
+      "description": "Gym facilities"
+    },
+    "/classes/{classId}": {
+      "schema": { "$ref": "#/entities/FitnessClass" },
+      "description": "Gym classes"
+    },
+    "/shopCategories/{categoryId}": {
+      "schema": { "$ref": "#/entities/ShopCategory" },
+      "description": "Shop product categories"
+    },
+    "/shopProducts/{productId}": {
+      "schema": { "$ref": "#/entities/ShopProduct" },
+      "description": "Shop supplement and accessory products"
+    },
+    "/siteContent/{docId}": {
+      "schema": { "$ref": "#/entities/SiteContent" },
+      "description": "Editable About Us, Branches, Achievements, Contact info"
+    },
+    "/announcements/{announcementId}": {
+      "schema": { "$ref": "#/entities/WebsiteAnnouncement" },
+      "description": "Gym announcements"
+    },
+    "/inquiries/{inquiryId}": {
+      "schema": { "$ref": "#/entities/Inquiry" },
+      "description": "Visitor contact inquiries and membership requests"
+    }
+  }
+}

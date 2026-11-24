@@ -1,0 +1,8 @@
+{
+  "name": "FitCore",
+  "description": "FitCore Gym Website, Member Portal, and Gym Management System with unified real-time database synchronization.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
